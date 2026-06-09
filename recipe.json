@@ -1,0 +1,25 @@
+{
+  "name": "My-Quran",
+  "version": "0.4.0",
+  "description": "Your AI Quran companion. Daily ayah, prayer times, duas, qibla, zakat calculator, mosque finder, and Islamic Q&A — right in your chat. 22 tools, 35+ languages, worldwide.",
+  "chef": "HANS Labs",
+  "tags": ["Faith", "Education", "Community", "Lifestyle"],
+  "mcp_server": {
+    "command": "node",
+    "args": ["dist/index.js"],
+    "cwd": "mcp-server",
+    "transport": "stdio"
+  },
+  "build": {
+    "command": "pnpm",
+    "args": ["build"],
+    "cwd": "mcp-server"
+  },
+  "onboarding": {
+    "message": "Assalamualaikum warahmatullahi wabarakatuh! 🤲\n\nI'm your Quran companion. Here's what I can do:\n\n📖 *Daily Ayah* — I'll send you a verse every day\n🕌 *Prayer Times* — Just tell me your city\n🔍 *Search Quran* — \"cari ayat tentang sabar\" or \"Al-Baqarah:255\"\n🤲 *Duas* — Morning, evening, travel, 30+ duas\n💬 *Ask Islam* — Quran, hadith, fiqh\n🧭 *Qibla* — Direction from anywhere\n🕌 *Mosque Finder* — Nearest mosques\n💰 *Zakat Calculator* — Any currency\n🕋 *Hajj & Umrah Guide* — Step-by-step\n🌙 *Ramadhan Suite* — Imsak, tarawih, laylatul qadr",
+    "prefill": "Hi! I'm [Your Name]. I'd like to set up:\n• City: [your city]\n• Language: Indonesian / English\n• Daily Ayah: Morning (7 AM)"
+  },
+  "categories": ["religion", "education", "productivity"],
+  "languages": ["en", "id", "fr", "de", "es", "tr", "ur", "ru", "zh", "bn", "fa", "ja", "ko", "pt", "nl", "it", "ro", "sv", "no", "pl", "az", "cs", "dv", "ha", "hi", "ku", "ml", "sq", "so", "sw", "tg", "th", "tt", "ug", "uz"],
+  "pricing": "free"
+}

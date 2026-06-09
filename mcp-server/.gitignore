@@ -1,0 +1,4 @@
+node_modules/
+dist/
+data/quran-cache.db
+*.tsbuildinfo

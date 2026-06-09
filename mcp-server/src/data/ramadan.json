@@ -1,0 +1,44 @@
+{
+  "tarawih": {
+    "title_en": "Tarawih Prayer Guide",
+    "title_id": "Panduan Shalat Tarawih",
+    "description_en": "Tarawih is a special night prayer performed during Ramadan after Isha. It is a confirmed Sunnah (Sunnah Mu'akkadah). The Prophet ﷺ said: 'Whoever prays during the nights of Ramadan with faith and seeking reward, his previous sins will be forgiven.' (Sahih Al-Bukhari)",
+    "description_id": "Tarawih adalah shalat malam khusus yang dilakukan selama Ramadhan setelah Isya. Hukumnya Sunnah Mu'akkadah. Rasulullah ﷺ bersabda: 'Barangsiapa yang shalat malam di bulan Ramadhan dengan iman dan mengharap pahala, akan diampuni dosa-dosanya yang telah lalu.' (Sahih Al-Bukhari)",
+    "rakahs": "8 or 20 rakahs (prayed in sets of 2)",
+    "timing": "After Isha prayer until before Fajr",
+    "tips_en": ["Pray with congregation at the mosque when possible", "Rest between every 4 rakahs (called 'Tarweeha')", "Complete the Quran during Tarawih if possible", "Make dua in witr for the Ummah"],
+    "tips_id": ["Shalat berjamaah di masjid jika memungkinkan", "Istirahat setiap 4 rakaat (disebut Tarweeha)", "Khatamkan Al-Quran selama Tarawih jika mampu", "Berdoa dalam witr untuk Umat Islam"]
+  },
+  "laylatul_qadr": {
+    "title_en": "Laylatul Qadr — The Night of Decree",
+    "title_id": "Laylatul Qadr — Malam Kemuliaan",
+    "description_en": "Laylatul Qadr is better than 1000 months (Quran 97:3). It falls in the last 10 nights of Ramadan, most likely on the odd nights (21st, 23rd, 25th, 27th, 29th). The Prophet ﷺ said: 'Seek Laylatul Qadr in the odd nights of the last ten nights of Ramadan.' (Sahih Al-Bukhari)",
+    "description_id": "Laylatul Qadr lebih baik dari 1000 bulan (QS 97:3). Ia jatuh pada 10 malam terakhir Ramadhan, kemungkinan besar pada malam ganjil (21, 23, 25, 27, 29). Rasulullah ﷺ bersabda: 'Carilah Laylatul Qadr pada malam-malam ganjil dari sepuluh malam terakhir Ramadhan.' (Sahih Al-Bukhari)",
+    "dua_recommended_arabic": "اللَّهُمَّ إِنَّكَ عَفُوٌّ تُحِبُّ الْعَفْوَ فَاعْفُ عَنِّي",
+    "dua_recommended_transliteration": "Allaahumma innaka 'afuwwun tuhibbul 'afwa fa'fu 'annee",
+    "dua_recommended_en": "O Allah, You are the Most Forgiving, and You love forgiveness, so forgive me.",
+    "dua_recommended_id": "Ya Allah, Engkau Maha Pemaaf dan mencintai kemaafan, maka maafkanlah aku.",
+    "signs_en": ["Sunrise is weak and reddish without rays", "The night is peaceful and calm", "Neither too hot nor too cold", "The moon shines clearly"],
+    "signs_id": ["Matahari terbit lemah kemerahan tanpa sinar", "Malam terasa damai dan tenang", "Tidak terlalu panas atau dingin", "Bulan bersinar terang"]
+  },
+  "imsak": {
+    "title_en": "Imsak — Pre-Dawn Meal",
+    "title_id": "Imsak — Sahur",
+    "description_en": "Imsak is the time to stop eating before Fajr (typically 10 minutes before). The Prophet ﷺ said: 'Take the pre-dawn meal (sahur), for indeed there is blessing in it.' (Sahih Al-Bukhari)",
+    "description_id": "Imsak adalah waktu berhenti makan sebelum Subuh (biasanya 10 menit sebelumnya). Rasulullah ﷺ bersabda: 'Makan sahurlah, karena sesungguhnya dalam sahur itu ada keberkahan.' (Sahih Al-Bukhari)",
+    "dua_sahur_arabic": "وَبِصَوْمِ غَدٍ نَّوَيْتُ مِنْ شَهْرِ رَمَضَانَ",
+    "dua_sahur_transliteration": "Wa bi sawmi ghadin nawaytu min shahri Ramadaan",
+    "dua_sahur_en": "I intend to fast tomorrow for the month of Ramadan.",
+    "dua_sahur_id": "Aku berniat puasa esok hari di bulan Ramadhan."
+  },
+  "iftar": {
+    "title_en": "Iftar — Breaking the Fast",
+    "title_id": "Iftar — Berbuka Puasa",
+    "description_en": "Break your fast at Maghrib (sunset). It is Sunnah to break with dates and water. The Prophet ﷺ said: 'The fasting person has two joys: when he breaks his fast and when he meets his Lord.' (Sahih Al-Bukhari)",
+    "description_id": "Berbuka puasa saat Maghrib. Sunnah berbuka dengan kurma dan air. Rasulullah ﷺ bersabda: 'Orang yang berpuasa memiliki dua kebahagiaan: ketika berbuka dan ketika bertemu Tuhannya.' (Sahih Al-Bukhari)",
+    "dua_iftar_arabic": "ذَهَبَ الظَّمَأُ وَابْتَلَّتِ الْعُرُوقُ وَثَبَتَ الْأَجْرُ إِنْ شَاءَ اللَّهُ",
+    "dua_iftar_transliteration": "Dhahabaz-zama'u wabtallatil 'urooqu wa thabatal ajru inshaa'Allaah",
+    "dua_iftar_en": "The thirst is gone, the veins are moistened, and the reward is confirmed, if Allah wills.",
+    "dua_iftar_id": "Telah hilang dahaga, telah basah urat-urat, dan telah tetap pahala, insya Allah."
+  }
+}
