@@ -46,10 +46,28 @@ export interface AyahResult {
   tafsir?: string;
 }
 
+// Simple in-memory cache
+const cache = new Map<string, { data: any; expiry: number }>();
+const CACHE_TTL = 3600 * 1000; // 1 hour
+
+function getFromCache<T>(key: string): T | null {
+  const cached = cache.get(key);
+  if (cached && Date.now() < cached.expiry) return cached.data;
+  return null;
+}
+
+function setToCache(key: string, data: any) {
+  cache.set(key, { data, expiry: Date.now() + CACHE_TTL });
+}
+
 async function fetchJson<T>(url: string): Promise<T> {
+  const cached = getFromCache<T>(url);
+  if (cached) return cached;
+
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Al-Quran API error: ${res.status} ${res.statusText}`);
   const data = await res.json();
+  setToCache(url, data.data);
   return data.data as T;
 }
 
@@ -59,7 +77,8 @@ export async function getSurah(surahNumber: number, offset = 0, limit = 10, lang
   total: number;
 }> {
   const edition = getEdition(language);
-
+  const cacheKey = `surah-${surahNumber}-${edition}`;
+  
   interface SurahResponse {
     number: number;
     name: string;
@@ -70,32 +89,35 @@ export async function getSurah(surahNumber: number, offset = 0, limit = 10, lang
     ayahs: Array<{ number: number; text: string; numberInSurah: number; juz: number; page: number }>;
   }
 
-  const [arabicData, translationData] = await Promise.all([
-    fetchJson<SurahResponse>(`${BASE_URL}/surah/${surahNumber}`),
-    fetchJson<{ ayahs: { text: string }[] }>(`${BASE_URL}/surah/${surahNumber}/${edition}`),
-  ]);
+  // Combined fetch to avoid double-fetching full text sequentially or redundantly
+  const fullSurah = await fetchJson<SurahResponse>(`${BASE_URL}/surah/${surahNumber}/editions/quran-uthmani,${edition}`);
+  
+  // Data from Al-Quran Cloud 'editions' endpoint comes as an array of editions
+  const editionsData = fullSurah as unknown as any[];
+  const arabicEdition = editionsData.find(e => e.edition.type === "quran");
+  const translationEdition = editionsData.find(e => e.edition.type === "translation");
 
   const surah: SurahInfo = {
-    number: arabicData.number,
-    name: arabicData.name,
-    englishName: arabicData.englishName,
-    englishNameTranslation: arabicData.englishNameTranslation,
-    revelationType: arabicData.revelationType,
-    numberOfAyahs: arabicData.numberOfAyahs,
+    number: arabicEdition.number,
+    name: arabicEdition.name,
+    englishName: arabicEdition.englishName,
+    englishNameTranslation: arabicEdition.englishNameTranslation,
+    revelationType: arabicEdition.revelationType,
+    numberOfAyahs: arabicEdition.numberOfAyahs,
   };
 
-  const allAyahs = arabicData.ayahs;
+  const allAyahs = arabicEdition.ayahs;
   const total = allAyahs.length;
   const paginated = allAyahs.slice(offset, offset + limit);
-  const translations = translationData.ayahs;
+  const translations = translationEdition.ayahs;
 
-  const ayahs: AyahResult[] = paginated.map((a) => ({
+  const ayahs: AyahResult[] = paginated.map((a: any, index: number) => ({
     surahNumber: surah.number,
     surahName: surah.name,
     surahEnglishName: surah.englishName,
     ayahNumber: a.numberInSurah,
     arabic: a.text,
-    translation: translations[a.numberInSurah - 1]?.text || "",
+    translation: translations[offset + index]?.text || "",
   }));
 
   return { surah, ayahs, total };
@@ -115,7 +137,6 @@ export async function searchQuran(
 
   const res = await fetch(url);
   if (!res.ok) {
-    // API returns 404 with "Nothing matching" for no results
     if (res.status === 404) return [];
     throw new Error(`Al-Quran API error: ${res.status} ${res.statusText}`);
   }
@@ -147,6 +168,7 @@ export async function getAyah(
 ): Promise<AyahResult | null> {
   const edition = getEdition(language);
 
+  // Optimized parallel fetch
   const [arabicData, translationData] = await Promise.all([
     fetchJson<Ayah>(`${BASE_URL}/ayah/${surahNumber}:${ayahNumber}`),
     fetchJson<{ text: string }>(`${BASE_URL}/ayah/${surahNumber}:${ayahNumber}/${edition}`),
@@ -165,10 +187,7 @@ export async function getAyah(
 export async function getRandomAyah(language = "id"): Promise<AyahResult> {
   const edition = getEdition(language);
 
-  // Step 1: Get random ayah (Arabic text + surah/ayah numbers)
   const arabicData = await fetchJson<Ayah>(`${BASE_URL}/ayah/random`);
-
-  // Step 2: Fetch translation for THAT EXACT ayah — no mismatch
   const translationData = await fetchJson<{ text: string }>(
     `${BASE_URL}/ayah/${arabicData.surah.number}:${arabicData.numberInSurah}/${edition}`
   );
@@ -183,7 +202,6 @@ export async function getRandomAyah(language = "id"): Promise<AyahResult> {
   };
 }
 
-// Parse surah reference like "Al-Baqarah:255" or "2:255"
 const SURAH_NAMES: Record<string, number> = {
   "al-fatihah": 1, "al-baqarah": 2, "ali-imran": 3, "an-nisa": 4, "al-maidah": 5,
   "al-anam": 6, "al-araf": 7, "al-anfal": 8, "at-taubah": 9, "yunus": 10,
@@ -210,10 +228,33 @@ const SURAH_NAMES: Record<string, number> = {
   "al-lahab": 111, "al-ikhlas": 112, "al-falaq": 113, "an-nas": 114,
 };
 
+// Fuzzy matching for surah names
+function findSurahFuzzy(query: string): number | null {
+  const norm = query.toLowerCase().replace(/[^a-z]/g, "");
+  
+  // Exact or normalized match
+  if (SURAH_NAMES[norm]) return SURAH_NAMES[norm];
+  
+  // Basic fuzzy logic: check if name starts with or contains query, 
+  // or handle common variants like 'baqoroh' vs 'baqarah'
+  const entries = Object.entries(SURAH_NAMES);
+  
+  const substitutions: Record<string, string> = { 'o': 'a', 'u': 'a', 'q': 'k', 'sh': 'sy' };
+  const fuzzyNorm = (s: string) => s.split('').map(c => substitutions[c] || c).join('');
+  const target = fuzzyNorm(norm);
+
+  for (const [name, num] of entries) {
+    const cleanName = name.replace(/[^a-z]/g, "");
+    if (cleanName.includes(norm) || norm.includes(cleanName)) return num;
+    if (fuzzyNorm(cleanName).includes(target)) return num;
+  }
+
+  return null;
+}
+
 export function parseSurahRef(query: string): { surah: number; ayah?: number } | null {
   const trimmed = query.trim();
 
-  // Try "SurahName:Ayah" or "number:ayah"
   const colonMatch = trimmed.match(/^(.+?):(\d+)$/i);
   if (colonMatch) {
     const nameOrNum = colonMatch[1].trim();
@@ -222,22 +263,17 @@ export function parseSurahRef(query: string): { surah: number; ayah?: number } |
     if (!isNaN(surahNum) && surahNum >= 1 && surahNum <= 114) {
       return { surah: surahNum, ayah };
     }
-    // Lookup by name
-    const key = nameOrNum.toLowerCase().replace(/[^a-z-]/g, "");
-    const num = SURAH_NAMES[key];
+    const num = findSurahFuzzy(nameOrNum);
     if (num) return { surah: num, ayah };
     return null;
   }
 
-  // Try just a number (entire surah)
   const numOnly = parseInt(trimmed);
   if (!isNaN(numOnly) && numOnly >= 1 && numOnly <= 114) {
     return { surah: numOnly };
   }
 
-  // Try just a name
-  const key = trimmed.toLowerCase().replace(/[^a-z-]/g, "");
-  const num = SURAH_NAMES[key];
+  const num = findSurahFuzzy(trimmed);
   if (num) return { surah: num };
 
   return null;
