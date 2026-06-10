@@ -38,8 +38,8 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
 
   const url = new URL(req.url || "/", `http://localhost:${PORT}`);
 
-  // GET /sse — establish SSE connection
-  if (url.pathname === "/sse" && req.method === "GET") {
+  // GET / or /sse — establish SSE connection
+  if ((url.pathname === "/" || url.pathname === "/sse") && req.method === "GET") {
     const server = new McpServer({ name: "my-quran", version: "0.4.0" });
     registerAllTools(server);
 
@@ -91,9 +91,16 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
     }
   }
 
-  // Home
-  res.writeHead(200, { "Content-Type": "text/html" });
-  res.end(`<html><head><link rel="icon" href="/favicon.ico" sizes="any"><link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png"><link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" href="/apple-touch-icon.png"></head><body style="font-family:Georgia,serif;padding:2rem"><h1>🕋 My-Quran v0.4.0</h1><p>22 tools · 35+ languages · global</p><p>SSE: <code>/sse</code> | Msg: <code>/messages?sessionId=...</code></p></body></html>`);
+  // Home page
+  if (url.pathname === "/home") {
+    res.writeHead(200, { "Content-Type": "text/html" });
+    res.end(`<html><head><link rel="icon" href="/favicon.ico" sizes="any"><link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png"><link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" href="/apple-touch-icon.png"></head><body style="font-family:Georgia,serif;padding:2rem"><h1>🕋 My-Quran v0.4.0</h1><p>22 tools · 35+ languages · global</p><p>SSE: <code>/sse</code> | Msg: <code>/messages?sessionId=...</code></p></body></html>`);
+    return;
+  }
+
+  // 404
+  res.writeHead(404, { "Content-Type": "text/plain" });
+  res.end("Not Found");
 }
 
 async function main() {
