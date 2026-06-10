@@ -18,6 +18,14 @@ import { getHajjGuide, getUmrahGuide, getTarawihInfo, getLaylatulQadrInfo, getRa
 import { getEdition, SUPPORTED_LANGUAGES } from "./services/languages.js";
 import * as quranApi from "./services/alquran-cloud.js";
 
+interface NameOfAllah {
+  number: number;
+  arabic: string;
+  transliteration: string;
+  translation_en: string;
+  translation_id: string;
+}
+
 export function registerAllTools(server: McpServer): void {
   // F1
   server.tool("get_daily_ayah", "Get a random daily Quran verse with Arabic text and translation. 35+ languages.", {
@@ -106,7 +114,7 @@ export function registerAllTools(server: McpServer): void {
     language: z.string().default("en"),
   }, async ({ language }) => {
     const names = await import("./data/99names.json", { with: { type: "json" } });
-    const data = names.default as any[];
+    const data = names.default as NameOfAllah[];
     const out = data.map(n => `${n.number}. *${n.arabic}* — ${n.transliteration}\n   _${language === "id" ? n.translation_id : n.translation_en}_`).join("\n\n");
     return { content: [{ type: "text", text: `📿 *99 Names of Allah*\n\n${out}` }] };
   });
