@@ -7,7 +7,7 @@
  * Free, no API key required.
  */
 
-import { getEdition, SUPPORTED_LANGUAGES } from "./languages.js";
+import { getEdition } from "./languages.js";
 
 const BASE_URL = "https://api.alquran.cloud/v1";
 
@@ -46,6 +46,15 @@ export interface AyahResult {
   tafsir?: string;
 }
 
+export interface Reciter {
+  identifier: string;
+  language: string;
+  name: string;
+  englishName: string;
+  format: string;
+  type: string;
+}
+
 // Simple in-memory cache
 const cache = new Map<string, { data: any; expiry: number }>();
 const CACHE_TTL = 3600 * 1000; // 1 hour
@@ -60,13 +69,27 @@ function setToCache(key: string, data: any) {
   cache.set(key, { data, expiry: Date.now() + CACHE_TTL });
 }
 
+async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout = 10000): Promise<Response> {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    return response;
+  } finally {
+    clearTimeout(id);
+  }
+}
+
 async function fetchJson<T>(url: string): Promise<T> {
   const cached = getFromCache<T>(url);
   if (cached) return cached;
 
-  const res = await fetch(url);
+  const res = await fetchWithTimeout(url);
   if (!res.ok) throw new Error(`Al-Quran API error: ${res.status} ${res.statusText}`);
-  const data = await res.json();
+  const data = await res.json() as any;
   setToCache(url, data.data);
   return data.data as T;
 }
@@ -77,7 +100,6 @@ export async function getSurah(surahNumber: number, offset = 0, limit = 10, lang
   total: number;
 }> {
   const edition = getEdition(language);
-  const cacheKey = `surah-${surahNumber}-${edition}`;
   
   interface SurahResponse {
     number: number;
@@ -89,10 +111,8 @@ export async function getSurah(surahNumber: number, offset = 0, limit = 10, lang
     ayahs: Array<{ number: number; text: string; numberInSurah: number; juz: number; page: number }>;
   }
 
-  // Combined fetch to avoid double-fetching full text sequentially or redundantly
   const fullSurah = await fetchJson<SurahResponse>(`${BASE_URL}/surah/${surahNumber}/editions/quran-uthmani,${edition}`);
   
-  // Data from Al-Quran Cloud 'editions' endpoint comes as an array of editions
   const editionsData = fullSurah as unknown as any[];
   const arabicEdition = editionsData.find(e => e.edition.type === "quran");
   const translationEdition = editionsData.find(e => e.edition.type === "translation");
@@ -135,13 +155,13 @@ export async function searchQuran(
   const edition = getEdition(language);
   const url = `${BASE_URL}/search/${encodeURIComponent(query)}/${edition}/all`;
 
-  const res = await fetch(url);
+  const res = await fetchWithTimeout(url);
   if (!res.ok) {
     if (res.status === 404) return [];
     throw new Error(`Al-Quran API error: ${res.status} ${res.statusText}`);
   }
 
-  const data = await res.json();
+  const data = await res.json() as any;
   const payload = data.data as {
     count: number;
     matches: Array<{
@@ -168,7 +188,6 @@ export async function getAyah(
 ): Promise<AyahResult | null> {
   const edition = getEdition(language);
 
-  // Optimized parallel fetch
   const [arabicData, translationData] = await Promise.all([
     fetchJson<Ayah>(`${BASE_URL}/ayah/${surahNumber}:${ayahNumber}`),
     fetchJson<{ text: string }>(`${BASE_URL}/ayah/${surahNumber}:${ayahNumber}/${edition}`),
@@ -202,6 +221,11 @@ export async function getRandomAyah(language = "id"): Promise<AyahResult> {
   };
 }
 
+export async function listReciters(): Promise<Reciter[]> {
+  const allEditions = await fetchJson<any[]>(`${BASE_URL}/edition?format=audio&type=versebyverse`);
+  return allEditions as Reciter[];
+}
+
 const SURAH_NAMES: Record<string, number> = {
   "al-fatihah": 1, "al-baqarah": 2, "ali-imran": 3, "an-nisa": 4, "al-maidah": 5,
   "al-anam": 6, "al-araf": 7, "al-anfal": 8, "at-taubah": 9, "yunus": 10,
@@ -229,14 +253,13 @@ const SURAH_NAMES: Record<string, number> = {
 };
 
 // Fuzzy matching for surah names
-function findSurahFuzzy(query: string): number | null {
+export function findSurahFuzzy(query: string): number | null {
   const norm = query.toLowerCase().replace(/[^a-z]/g, "");
   
   // Exact or normalized match
   if (SURAH_NAMES[norm]) return SURAH_NAMES[norm];
   
-  // Basic fuzzy logic: check if name starts with or contains query, 
-  // or handle common variants like 'baqoroh' vs 'baqarah'
+  // Basic fuzzy logic
   const entries = Object.entries(SURAH_NAMES);
   
   const substitutions: Record<string, string> = { 'o': 'a', 'u': 'a', 'q': 'k', 'sh': 'sy' };
