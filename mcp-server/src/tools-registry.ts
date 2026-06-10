@@ -1,6 +1,6 @@
 /**
  * Tool Registry — shared between stdio and HTTP transports.
- * All 22 tools registered once.
+ * All 23 tools registered once.
  */
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -14,8 +14,8 @@ import { getQuote, listQuoteThemes } from "./tools/quotes.js";
 import { calculateZakat, formatZakatResult } from "./tools/zakat.js";
 import { getUserPrefs, setUserPref, formatUserPrefs } from "./tools/personalization.js";
 import { findMosques, getImsakTimes } from "./tools/location.js";
-import { getHajjGuide, getUmrahGuide, getTarawihInfo, getLaylatulQadrInfo, getRamadanDua } from "./tools/guides.js";
-import { getEdition, SUPPORTED_LANGUAGES } from "./services/languages.js";
+import { getHajjGuide, getUmrahGuide, getTarawihInfo, getLaylatul_qadrInfo, getRamadanDua } from "./tools/guides.js";
+import { SUPPORTED_LANGUAGES } from "./services/languages.js";
 import * as quranApi from "./services/alquran-cloud.js";
 
 interface NameOfAllah {
@@ -167,7 +167,7 @@ export function registerAllTools(server: McpServer): void {
 
   server.tool("laylatul_qadr_info", "Laylatul Qadr info + recommended dua.", {
     language: z.string().default("en"),
-  }, async ({ language }) => ({ content: [{ type: "text", text: await getLaylatulQadrInfo(language) }] }));
+  }, async ({ language }) => ({ content: [{ type: "text", text: await getLaylatul_qadrInfo(language) }] }));
 
   server.tool("ramadan_dua", "Sahur or Iftar dua.", {
     type: z.enum(["sahur","iftar"]), language: z.string().default("en"),
@@ -179,4 +179,13 @@ export function registerAllTools(server: McpServer): void {
   }, async ({ surah, ayah, reciter }) => ({
     content: [{ type: "text", text: `🔊 *Ayah Audio*\n\n📖 Surah ${surah}, Ayah ${ayah}\n🎙️ ${reciter}\n\n[Listen](https://cdn.alquran.cloud/media/audio/ayah/${reciter}/${surah}_${ayah}.mp3)` }],
   }));
+
+  server.tool("list_reciters", "List available audio reciters for Quran recitation.", {
+    language: z.string().optional().describe("Filter by language (e.g. 'ar', 'en')"),
+  }, async ({ language }) => {
+    const reciters = await quranApi.listReciters();
+    const filtered = language ? reciters.filter(r => r.language === language) : reciters;
+    const text = filtered.map(r => `🎙️ *${r.name}* (${r.englishName})\n   ID: \`${r.identifier}\` · Lang: ${r.language}`).join("\n\n");
+    return { content: [{ type: "text", text: `🎧 *Available Reciters*\n\n${text}` }] };
+  });
 }
