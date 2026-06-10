@@ -7,6 +7,8 @@
  * Free, no API key required.
  */
 
+import { resolveMethod } from "./methods.js";
+
 const BASE_URL = "https://api.aladhan.com/v1";
 
 export interface PrayerTimesResult {
@@ -58,20 +60,34 @@ function toDmyDate(date?: string): string {
   return `${d}-${m}-${y}`;
 }
 
+async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout = 10000): Promise<Response> {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    return response;
+  } finally {
+    clearTimeout(id);
+  }
+}
+
 export async function getPrayerTimesByCity(
   city: string,
   country?: string,
   date?: string,
-  method?: number
+  method?: string | number
 ): Promise<PrayerTimesResult> {
   const dateParam = toDmyDate(date);
-  const methodParam = method || 2; // default: ISNA (North America), commonly used worldwide
+  const methodParam = resolveMethod(method, country);
   const countryParam = country ? `&country=${encodeURIComponent(country)}` : "";
   const url = `${BASE_URL}/timingsByCity/${dateParam}?city=${encodeURIComponent(city)}${countryParam}&method=${methodParam}`;
 
-  const res = await fetch(url);
+  const res = await fetchWithTimeout(url);
   if (!res.ok) throw new Error(`Al-Adhan API error: ${res.status} ${res.statusText}`);
-  const data = await res.json();
+  const data = await res.json() as any;
   return data.data;
 }
 
@@ -79,29 +95,29 @@ export async function getPrayerTimesByCoords(
   lat: number,
   lng: number,
   date?: string,
-  method?: number
+  method?: string | number
 ): Promise<PrayerTimesResult> {
   const dateParam = toDmyDate(date);
-  const methodParam = method || 2;
+  const methodParam = resolveMethod(method);
   const url = `${BASE_URL}/timings/${dateParam}?latitude=${lat}&longitude=${lng}&method=${methodParam}`;
 
-  const res = await fetch(url);
+  const res = await fetchWithTimeout(url);
   if (!res.ok) throw new Error(`Al-Adhan API error: ${res.status} ${res.statusText}`);
-  const data = await res.json();
+  const data = await res.json() as any;
   return data.data;
 }
 
 export async function getQiblaDirection(lat: number, lng: number): Promise<QiblaResult> {
   const url = `${BASE_URL}/qibla/${lat}/${lng}`;
-  const res = await fetch(url);
+  const res = await fetchWithTimeout(url);
   if (!res.ok) throw new Error(`Al-Adhan API error: ${res.status} ${res.statusText}`);
-  const data = await res.json();
+  const data = await res.json() as any;
   return data.data;
 }
 
 export async function getHijriDate(): Promise<HijriResult> {
-  const res = await fetch(`${BASE_URL}/gToH`);
+  const res = await fetchWithTimeout(`${BASE_URL}/gToH`);
   if (!res.ok) throw new Error(`Al-Adhan API error: ${res.status} ${res.statusText}`);
-  const data = await res.json();
+  const data = await res.json() as any;
   return data.data;
 }

@@ -11,7 +11,7 @@ export async function getPrayerTimes(
   lat?: number,
   lng?: number,
   date?: string,
-  method?: number
+  method?: string | number
 ): Promise<string> {
   let data: aladhan.PrayerTimesResult;
 
