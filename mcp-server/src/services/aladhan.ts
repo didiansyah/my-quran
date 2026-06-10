@@ -1,12 +1,3 @@
-/**
- * Al-Adhan API client
- * Docs: https://aladhan.com/prayer-times-api
- * Base URL: https://api.aladhan.com/v1
- *
- * Provides Islamic prayer times (worldwide), Qibla direction, and Hijri calendar.
- * Free, no API key required.
- */
-
 import { resolveMethod } from "./methods.js";
 
 const BASE_URL = "https://api.aladhan.com/v1";
