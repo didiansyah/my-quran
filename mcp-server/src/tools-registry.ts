@@ -30,11 +30,11 @@ interface NameOfAllah {
 export function registerAllTools(server: McpServer): void {
   // F1
   server.tool("get_daily_ayah", "Get a random daily Quran verse with Arabic text and translation. 35+ languages.", {
-    language: z.string().default("en").describe(`Language code for translation. Supported: ${SUPPORTED_LANGUAGES.join(", ")}`),
+    language: z.string().default("en").describe(`Language code. Supported: ${SUPPORTED_LANGUAGES.join(", ")}`),
     reciter: z.string().optional().describe("Audio reciter code (e.g. 'ar.alafasy'). Omit for text-only."),
   }, async ({ language, reciter }) => {
     const ayah = await quranApi.getRandomAyah(language);
-    let text = [\`📖 *Daily Ayah*\`, \`\`, \`*\${ayah.surahName} (\${ayah.surahEnglishName}) — \${ayah.surahNumber}:\${ayah.ayahNumber}*\`, \`\`, ayah.arabic, \`\`, \`> \${ayah.translation}\`];
+    let text = [\`📖 *Daily Ayah*\`, \`\`, \`*\${ayah.surahName} (\${ayah.surahEnglishName}) \u2014 \${ayah.surahNumber}:\${ayah.ayahNumber}*\`, \`\`, ayah.arabic, \`\`, \`> \${ayah.translation}\`];
     if (reciter) text.push(\`\`, \`🔊 [Listen](https://cdn.alquran.cloud/media/audio/ayah/\${reciter}/\${ayah.surahNumber}_\${ayah.ayahNumber}.mp3)\`);
     text.push(\`\`, \`_📌 May it benefit you. Jazakallahu khairan._\`);
     return { content: [{ type: "text", text: text.join("\n") }] };
@@ -43,7 +43,7 @@ export function registerAllTools(server: McpServer): void {
   // F2
   server.tool("search_quran", "Search Quran by keyword, surah name, or reference (e.g. 'Al-Baqarah:255').", {
     query: z.string().describe("Search term or reference"),
-    language: z.string().default("en").describe(`Language code for translation. Supported: ${SUPPORTED_LANGUAGES.join(", ")}`),
+    language: z.string().default("en").describe("Translation language"),
     limit: z.number().min(1).max(10).default(5),
   }, async ({ query, language, limit }) => {
     const result = await searchQuran(query, language, limit);
@@ -52,23 +52,23 @@ export function registerAllTools(server: McpServer): void {
 
   // F3
   server.tool("list_surahs", "List all 114 surahs.", {
-    language: z.string().default("en").describe(`Language code. Supported: ${SUPPORTED_LANGUAGES.join(", ")}`),
+    language: z.string().default("en"),
   }, async ({ language }) => ({ content: [{ type: "text", text: await listSurahs(language) }] }));
 
   server.tool("get_surah", "Read a surah verse by verse with pagination.", {
     surah: z.string().describe("Surah number (1-114) or name"),
     offset: z.number().min(0).default(0),
     limit: z.number().min(1).max(10).default(10),
-    language: z.string().default("en").describe(`Language code for translation. Supported: ${SUPPORTED_LANGUAGES.join(", ")}`),
+    language: z.string().default("en"),
   }, async ({ surah, offset, limit, language }) => {
     const result = await getSurah(surah, offset, limit, language);
     return { content: [{ type: "text", text: result }] };
   });
 
   // F4
-  server.tool("ask_question", "Ask an Islamic question — Quran-grounded answers.", {
+  server.tool("ask_question", "Ask an Islamic question \u2014 Quran-grounded answers.", {
     question: z.string().describe("Your question"),
-    language: z.string().default("en").describe(`Language code for the response. Supported: ${SUPPORTED_LANGUAGES.join(", ")}`),
+    language: z.string().default("en"),
   }, async ({ question, language }) => ({ content: [{ type: "text", text: await askQuestion(question, language) }] }));
 
   // F5
@@ -79,20 +79,20 @@ export function registerAllTools(server: McpServer): void {
     lng: z.number().min(-180).max(180).optional(),
     date: z.string().optional(),
     method: z.union([z.string(), z.number()]).optional().describe(\`Calculation method ID or slug (e.g. 'kemenag', 'mwl', 'isna'). Supported slugs: \${Object.keys(CALCULATION_METHODS).join(", ")}\`),
+    timezone: z.string().optional().describe("Timezone override (e.g. 'Asia/Jakarta')."),
   }, async (args) => {
-    const result = await getPrayerTimes(args.city, args.country, args.lat, args.lng, args.date, args.method);
+    const result = await getPrayerTimes(args.city, args.country, args.lat, args.lng, args.date, args.method, args.timezone);
     return { content: [{ type: "text", text: result }] };
   });
 
   // F6
   server.tool("get_dua", "Get duas by category.", {
     category: z.enum(["morning","evening","travel","eating","sleep","protection","forgiveness","anxiety","sickness","rain","mosque","new_moon","parents","success"]).optional(),
-    random: z.boolean().default(true), 
-    language: z.string().default("en").describe(`Language code for translation. Supported: ${SUPPORTED_LANGUAGES.join(", ")}`),
+    random: z.boolean().default(true), language: z.string().default("en"),
   }, async ({ category, random, language }) => ({ content: [{ type: "text", text: await getDua(category, random, language) }] }));
 
   server.tool("list_dua_categories", "List dua categories.", {
-    language: z.string().default("en").describe(`Language code. Supported: ${SUPPORTED_LANGUAGES.join(", ")}`),
+    language: z.string().default("en"),
   }, async ({ language }) => ({ content: [{ type: "text", text: await listDuaCategories(language) }] }));
 
   // F7
@@ -106,7 +106,7 @@ export function registerAllTools(server: McpServer): void {
     value: z.string(),
   }, async ({ user_id, key, value }) => {
     setUserPref(user_id, key, key === "preferred_method" ? parseInt(value) : value);
-    return { content: [{ type: "text", text: \`✅ *\${key}* → *\${value}*\n\n\${formatUserPrefs(getUserPrefs(user_id))}\` }] };
+    return { content: [{ type: "text", text: \`\u2705 *\${key}* \u2192 *\${value}*\n\n\${formatUserPrefs(getUserPrefs(user_id))}\` }] };
   });
 
   // F8
@@ -116,19 +116,19 @@ export function registerAllTools(server: McpServer): void {
 
   // F9
   server.tool("get_99names", "99 Names of Allah.", {
-    language: z.string().default("en").describe(`Language code for translation. Supported: ${SUPPORTED_LANGUAGES.join(", ")}`),
+    language: z.string().default("en"),
   }, async ({ language }) => {
     const names = await import("./data/99names.json", { with: { type: "json" } });
     const data = names.default as NameOfAllah[];
-    const out = data.map(n => \`\${n.number}. *\${n.arabic}* — \${n.transliteration}\n   _\${language === "id" ? n.translation_id : n.translation_en}_\`).join("\n\n");
-    return { content: [{ type: "text", text: \`📿 *99 Names of Allah*\n\n\${out}\` }] };
+    const out = data.map(n => \`\${n.number}. *\${n.arabic}* \u2014 \${n.transliteration}\n   _\${language === "id" ? n.translation_id : n.translation_en}_\`).join("\n\n");
+    return { content: [{ type: "text", text: \`\uD83D\uDCFF *99 Names of Allah*\n\n\${out}\` }] };
   });
 
   // F10
   server.tool("get_hijri_date", "Today's Hijri date.", {}, async () => ({ content: [{ type: "text", text: await getHijriDate() }] }));
 
   // F11
-  server.tool("calculate_zakat", "Zakat calculator — any currency.", {
+  server.tool("calculate_zakat", "Zakat calculator \u2014 any currency.", {
     cash: z.number().min(0), gold_grams: z.number().min(0).default(0), silver_grams: z.number().min(0).default(0),
     trade_goods: z.number().min(0).default(0), gold_price_per_gram: z.number().min(0), silver_price_per_gram: z.number().min(0).default(0),
     currency: z.string().default("USD"),
@@ -139,12 +139,11 @@ export function registerAllTools(server: McpServer): void {
 
   // F12
   server.tool("get_quote", "Inspirational Quran/Hadith quote.", {
-    theme: z.string().optional(), 
-    language: z.string().default("en").describe(`Language code for translation. Supported: ${SUPPORTED_LANGUAGES.join(", ")}`),
+    theme: z.string().optional(), language: z.string().default("en"),
   }, async ({ theme, language }) => ({ content: [{ type: "text", text: await getQuote(theme, language) }] }));
 
   server.tool("list_quote_themes", "Quote themes.", {
-    language: z.string().default("en").describe(`Language code. Supported: ${SUPPORTED_LANGUAGES.join(", ")}`),
+    language: z.string().default("en"),
   }, async ({ language }) => ({ content: [{ type: "text", text: await listQuoteThemes(language) }] }));
 
   // F13
@@ -155,13 +154,11 @@ export function registerAllTools(server: McpServer): void {
 
   // F14
   server.tool("hajj_guide", "Step-by-step Hajj guide (10 steps).", {
-    step: z.number().min(1).max(10).optional(), 
-    language: z.string().default("en").describe(`Language code. Supported: ${SUPPORTED_LANGUAGES.join(", ")}`),
+    step: z.number().min(1).max(10).optional(), language: z.string().default("en"),
   }, async ({ step, language }) => ({ content: [{ type: "text", text: await getHajjGuide(step, language) }] }));
 
   server.tool("umrah_guide", "Step-by-step Umrah guide (6 steps).", {
-    step: z.number().min(1).max(6).optional(), 
-    language: z.string().default("en").describe(`Language code. Supported: ${SUPPORTED_LANGUAGES.join(", ")}`),
+    step: z.number().min(1).max(6).optional(), language: z.string().default("en"),
   }, async ({ step, language }) => ({ content: [{ type: "text", text: await getUmrahGuide(step, language) }] }));
 
   // F15
@@ -170,23 +167,22 @@ export function registerAllTools(server: McpServer): void {
   }, async ({ city, country }) => ({ content: [{ type: "text", text: await getImsakTimes(city, country) }] }));
 
   server.tool("tarawih_info", "Tarawih prayer guide.", {
-    language: z.string().default("en").describe(`Language code. Supported: ${SUPPORTED_LANGUAGES.join(", ")}`),
+    language: z.string().default("en"),
   }, async ({ language }) => ({ content: [{ type: "text", text: await getTarawihInfo(language) }] }));
 
   server.tool("laylatul_qadr_info", "Laylatul Qadr info + recommended dua.", {
-    language: z.string().default("en").describe(`Language code. Supported: ${SUPPORTED_LANGUAGES.join(", ")}`),
+    language: z.string().default("en"),
   }, async ({ language }) => ({ content: [{ type: "text", text: await getLaylatul_qadrInfo(language) }] }));
 
   server.tool("ramadan_dua", "Sahur or Iftar dua.", {
-    type: z.enum(["sahur","iftar"]), 
-    language: z.string().default("en").describe(`Language code. Supported: ${SUPPORTED_LANGUAGES.join(", ")}`),
+    type: z.enum(["sahur","iftar"]), language: z.string().default("en"),
   }, async ({ type, language }) => ({ content: [{ type: "text", text: await getRamadanDua(type, language) }] }));
 
   // Audio
   server.tool("get_ayah_audio", "Audio recitation URL for an ayah.", {
     surah: z.number().min(1).max(114), ayah: z.number().min(1), reciter: z.string().default("ar.alafasy"),
   }, async ({ surah, ayah, reciter }) => ({
-    content: [{ type: "text", text: \`🔊 *Ayah Audio*\n\n📖 Surah \${surah}, Ayah \${ayah}\n🎙️ \${reciter}\n\n[Listen](https://cdn.alquran.cloud/media/audio/ayah/\${reciter}/\${surah}_\${ayah}.mp3)\` }],
+    content: [{ type: "text", text: \`\uD83D\uDD0A *Ayah Audio*\n\n\uD83D\uDCD6 Surah \${surah}, Ayah \${ayah}\n\uD83C\uDF99\uFE0F \${reciter}\n\n[Listen](https://cdn.alquran.cloud/media/audio/ayah/\${reciter}/\${surah}_\${ayah}.mp3)\` }],
   }));
 
   server.tool("list_reciters", "List available audio reciters for Quran recitation.", {
@@ -194,12 +190,12 @@ export function registerAllTools(server: McpServer): void {
   }, async ({ language }) => {
     const reciters = await quranApi.listReciters();
     const filtered = language ? reciters.filter(r => r.language === language) : reciters;
-    const text = filtered.map(r => \`🎙️ *\${r.name}* (\${r.englishName})\n   ID: \\\`\${r.identifier}\\\` · Lang: \${r.language}\`).join("\n\n");
-    return { content: [{ type: "text", text: \`🎧 *Available Reciters*\n\n\${text}\` }] };
+    const text = filtered.map(r => \`\uD83C\uDF99\uFE0F *\${r.name}* (\${r.englishName})\n   ID: \\\`\${r.identifier}\\\` \u00B7 Lang: \${r.language}\`).join("\n\n");
+    return { content: [{ type: "text", text: \`\uD83C\uDFA7 *Available Reciters*\n\n\${text}\` }] };
   });
 
   // Languages
   server.tool("list_supported_languages", "List all supported languages for translations and content.", {}, 
-    async () => ({ content: [{ type: "text", text: \`🌍 *Supported Languages for Translations*\n\n\${SUPPORTED_LANGUAGES.join(", ")}\n\n_Use these codes (e.g. 'en', 'id', 'fr') in the 'language' parameter of other tools._\` }] })
+    async () => ({ content: [{ type: "text", text: \`\uD83C\uDF0D *Supported Languages for Translations*\n\n\${SUPPORTED_LANGUAGES.join(", ")}\n\n_Use these codes (e.g. 'en', 'id', 'fr') in the 'language' parameter of other tools._\` }] })
   );
 }
