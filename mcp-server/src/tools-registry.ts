@@ -17,6 +17,7 @@ import { findMosques, getImsakTimes } from "./tools/location.js";
 import { getHajjGuide, getUmrahGuide, getTarawihInfo, getLaylatul_qadrInfo, getRamadanDua } from "./tools/guides.js";
 import { SUPPORTED_LANGUAGES } from "./services/languages.js";
 import * as quranApi from "./services/alquran-cloud.js";
+import { CALCULATION_METHODS } from "./services/methods.js";
 
 interface NameOfAllah {
   number: number;
@@ -72,9 +73,12 @@ export function registerAllTools(server: McpServer): void {
 
   // F5
   server.tool("get_prayer_times", "Prayer times for any city worldwide or GPS coordinates.", {
-    city: z.string().optional(), country: z.string().optional(),
-    lat: z.number().min(-90).max(90).optional(), lng: z.number().min(-180).max(180).optional(),
-    date: z.string().optional(), method: z.number().min(0).max(23).optional(),
+    city: z.string().optional(),
+    country: z.string().optional(),
+    lat: z.number().min(-90).max(90).optional(),
+    lng: z.number().min(-180).max(180).optional(),
+    date: z.string().optional(),
+    method: z.union([z.string(), z.number()]).optional().describe(`Calculation method ID or slug (e.g. 'kemenag', 'mwl', 'isna'). Supported slugs: ${Object.keys(CALCULATION_METHODS).join(", ")}`),
   }, async (args) => {
     const result = await getPrayerTimes(args.city, args.country, args.lat, args.lng, args.date, args.method);
     return { content: [{ type: "text", text: result }] };
